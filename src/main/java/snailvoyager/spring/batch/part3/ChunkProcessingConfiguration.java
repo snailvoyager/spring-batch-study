@@ -4,12 +4,12 @@ import io.micrometer.core.instrument.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemProcessor;
@@ -41,7 +41,7 @@ public class ChunkProcessingConfiguration {
     }
 
     @Bean
-    @JobScope
+    @JobScope   //job 실행 시점에 생성/소멸
     public Step chunkBaseStep(@Value("#{jobParameters[chunkSize]}") String chunkSize) {
         return stepBuilderFactory.get("chunkBaseStep")
                 .<String, String>chunk(StringUtils.isNotEmpty(chunkSize) ? Integer.parseInt(chunkSize) : 10)  //데이터를 10개씩 나눔. 1 Generic : reader 반환타입, 2 Generic : processor 반환타입
@@ -67,18 +67,20 @@ public class ChunkProcessingConfiguration {
     @Bean
     public Step taskBaseStep() {
         return stepBuilderFactory.get("taskBaseStep")
-                .tasklet(this.tasklet())
+                .tasklet(this.tasklet(null))    //null이더라도 Spring Expression Language 로 파라미터를 찾는다
                 .build();
     }
 
-    private Tasklet tasklet() {
+    @Bean
+    @StepScope      //Job, Step 라이프사이클에 의해 생성되기 때문에 Thread Safe
+    public Tasklet tasklet(@Value("#{jobParameters[chunkSize]}") String value) {
         List<String> items = getItems();
 
         return (contribution, chunkContext) -> {        //tasklet paging 처리
             StepExecution stepExecution = contribution.getStepExecution();
-            JobParameters jobParameters = stepExecution.getJobParameters();
-
-            String value = jobParameters.getString("chunkSize", "10");      //parameter로 받아오기
+//            JobParameters jobParameters = stepExecution.getJobParameters();
+//
+//            String value = jobParameters.getString("chunkSize", "10");      //parameter로 받아오기
             int chunkSize = StringUtils.isNotEmpty(value) ? Integer.parseInt(value) : 10;
 
             int fromIndex = stepExecution.getReadCount();
