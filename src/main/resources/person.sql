@@ -11,3 +11,25 @@ insert into person (name, age, address)
 values ('유재석','40','인천');
 insert into person (name, age, address)
 values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');
+insert into person (name, age, address)
+values ('강호동','30','부산');

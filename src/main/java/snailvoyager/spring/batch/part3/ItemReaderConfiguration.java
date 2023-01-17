@@ -7,11 +7,13 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.JdbcCursorItemReader;
-import org.springframework.batch.item.database.JpaCursorItemReader;
+import org.springframework.batch.item.database.*;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
+import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
 import org.springframework.batch.item.database.builder.JpaCursorItemReaderBuilder;
+import org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
@@ -19,12 +21,15 @@ import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -44,6 +49,7 @@ public class ItemReaderConfiguration {
                 .next(this.csvFileStep())
                 .next(this.jdbcStep())
                 .next(this.jpaStep())
+                .next(this.jdbcPagingStep())
                 .build();
     }
 
@@ -75,6 +81,16 @@ public class ItemReaderConfiguration {
     }
 
     @Bean
+    public Step jdbcPagingStep() throws Exception {
+        return stepBuilderFactory.get("jdbcPagingStep")
+                .<Person, Person>chunk(10)
+                .reader(jdbcPagingItemReader())
+                .processor(jdbcPagingProcessor())
+                .writer(itemWriter())
+                .build();
+    }
+
+    @Bean
     public Step jpaStep() {
         return stepBuilderFactory.get("jpaStep")
                 .<Person, Person>chunk(10)
@@ -91,6 +107,45 @@ public class ItemReaderConfiguration {
                 .build();
 
         return jpaCursorItemReader;
+    }
+
+    @Bean
+    public JdbcPagingItemReader<Person> jdbcPagingItemReader() throws Exception {
+        Map<String, Object> parameterValues = new HashMap<>();
+        parameterValues.put("address", "부산");
+
+        return new JdbcPagingItemReaderBuilder<Person>()
+                .pageSize(10)
+                .fetchSize(10)
+                .dataSource(dataSource)
+                .rowMapper(new BeanPropertyRowMapper<>(Person.class))
+                .queryProvider(createQueryProvider())
+                .parameterValues(parameterValues)
+                .name("jdbcPagingItemReader")
+                .build();
+    }
+
+    @Bean
+    public PagingQueryProvider createQueryProvider() throws Exception {
+        SqlPagingQueryProviderFactoryBean queryProvider = new SqlPagingQueryProviderFactoryBean();
+        queryProvider.setDataSource(dataSource);
+        queryProvider.setSelectClause("id, name, age, address");
+        queryProvider.setFromClause("from person");
+        queryProvider.setWhereClause("where address = :address");
+
+        Map<String, Order> sortKey = new HashMap<>(1);
+        sortKey.put("id", Order.ASCENDING);
+        queryProvider.setSortKeys(sortKey);
+
+        return queryProvider.getObject();
+    }
+
+    private ItemProcessor<Person, Person> jdbcPagingProcessor() {
+        return item -> {
+            item.setName(item.getName() + "9");
+            log.info(">>>>> jdbcPagingProcessor : {}", item.getName());
+            return item;
+        };
     }
 
     private JdbcCursorItemReader<Person> jdbcCursorItemReader() throws Exception {

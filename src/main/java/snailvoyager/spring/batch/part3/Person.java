@@ -2,10 +2,12 @@ package snailvoyager.spring.batch.part3;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 
 @Getter
+@Setter
 @Entity
 @NoArgsConstructor
 @Table(name="Person")
