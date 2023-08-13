@@ -1,8 +1,10 @@
 spring:
   datasource:
     hikari:
-      jdbc-url: jdbc:mysql://127.0.0.1:3306/spring_batch?characterEncoding=UTF-8&serverTimezone=UTC&rewriteBatchedStatements=true&profileSQL=true&c=Slf4JLogger&maxQuerySizeToLog=200
-      driver-class-name: com.mysql.cj.jdbc.Driver
+      #jdbc-url: jdbc:mysql://127.0.0.1:3306/spring_batch?characterEncoding=UTF-8&serverTimezone=UTC&rewriteBatchedStatements=true&profileSQL=true&c=Slf4JLogger&maxQuerySizeToLog=200
+      #driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:log4jdbc:mysql://127.0.0.1:3306/spring_batch?characterEncoding=UTF-8&serverTimezone=UTC&rewriteBatchedStatements=true&profileSQL=true&c=Slf4JLogger&maxQuerySizeToLog=200
+      driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
       username: root
       password: admin
   jpa:
@@ -14,3 +16,12 @@ spring:
       names: ${job.name:NONE}
     jdbc:
       initialize-schema: never
+
+logging:
+  level:
+    jdbc.sqlonly: OFF
+    jdbc.audit: OFF
+    jdbc.resultset: OFF
+    jdbc.connection: OFF
+    jdbc.sqltiming: DEBUG
+    jdbc.resultsettable: DEBUG
