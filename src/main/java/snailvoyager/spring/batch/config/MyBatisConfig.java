@@ -11,9 +11,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.sql.DataSource;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE;
 
 @Configuration
-@MapperScan(basePackages = "snailvoyager.spring.batch.person", sqlSessionTemplateRef = "mainSqlSessionTemplate")
+@MapperScan(annotationClass = MyBatisConfig.MainMyBatis.class, basePackages = "snailvoyager.spring.batch", sqlSessionTemplateRef = "mainSqlSessionTemplate")
 public class MyBatisConfig {
     @Bean(name = "mainSqlSessionFactory")
     public SqlSessionFactory mainSqlSessionFactory(
@@ -39,5 +44,11 @@ public class MyBatisConfig {
         configuration.setMapUnderscoreToCamelCase(true);
         configuration.setJdbcTypeForNull(JdbcType.NULL);
         return configuration;
+    }
+
+    @Target(TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface MainMyBatis {
+
     }
 }
